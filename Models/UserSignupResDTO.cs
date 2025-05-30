@@ -1,10 +1,10 @@
 namespace AuthC_.Models;
 
-public class User
+public class UserSignupResDTO
 {
     public int Id { get; set; }
     public required string Email { get; set; }
-    public required string Hash { get; set; }
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
+    public string DisplayName => $"{FirstName} {LastName}";
 }
