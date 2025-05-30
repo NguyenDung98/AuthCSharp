@@ -1,0 +1,50 @@
+# Build results
+bin/
+obj/
+out/
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Rider & VS Code workspace
+.idea/
+*.sln.iml
+.vscode/
+*.code-workspace
+
+# ASP.NET temporary files
+*.Publish.xml
+*.dbmdl
+
+# NuGet packages
+*.nupkg
+packages/
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Logs
+*.log
+
+# IIS Express
+.vs/
+*.vspscc
+*.vssscc
+
+# Test results
+TestResults/
+*.trx
+
+# Local configuration files
+appsettings.Development.json
+secrets.json
+
+# DotCover
+*.dotCover
+
+# SonarQube
+.sonar/
