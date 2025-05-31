@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using AuthC_.Models;
 
-namespace AuthC_.Models;
+namespace AuthC_.Data;
 
 public class UserContext : DbContext
 {

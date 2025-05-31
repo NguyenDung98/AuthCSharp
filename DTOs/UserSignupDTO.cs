@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace AuthC_.Models;
+namespace AuthC_.DTOs;
 
-public class UserSigninDTO
+public class UserSignupDTO
 {
     [Required]
     [EmailAddress]
@@ -12,4 +12,6 @@ public class UserSigninDTO
     [MinLength(8)]
     [MaxLength(20)]
     public required string Password { get; set; }
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
 }

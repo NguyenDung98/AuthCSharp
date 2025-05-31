@@ -1,4 +1,4 @@
-namespace AuthC_.Models;
+namespace AuthC_.DTOs;
 
 public class UserSigninResDTO
 {
