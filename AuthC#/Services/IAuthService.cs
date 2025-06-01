@@ -1,5 +1,4 @@
 using AuthC_.DTOs;
-using AuthC_.Models;
 
 namespace AuthC_.Services
 {

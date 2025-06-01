@@ -2,7 +2,6 @@ using AuthC_.Data;
 using AuthC_.DTOs;
 using AuthC_.Helpers;
 using AuthC_.Models;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
 namespace AuthC_.Services
@@ -11,6 +10,7 @@ namespace AuthC_.Services
     {
         private readonly AppDbContext _appDbContext = appDbContext;
         private readonly JwtHelper _jwtHelper = jwtHelper;
+        private readonly int RefreshTokenExpireDays = 30;
 
         // Implementation of the IAuthService methods would go here.
         public async Task<UserSignupResDTO> SignUpUser(UserSignupDTO userSignupDTO)
@@ -65,7 +65,7 @@ namespace AuthC_.Services
             {
                 UserId = user.Id,
                 RefreshToken = refreshToken,
-                ExpiresIn = DateTime.UtcNow.AddDays(30).ToString() // Set expiration for 30 days
+                ExpiresIn = DateTime.UtcNow.AddDays(RefreshTokenExpireDays).ToString()
             });
             await _appDbContext.SaveChangesAsync();
 
@@ -118,7 +118,7 @@ namespace AuthC_.Services
             {
                 UserId = token.UserId,
                 RefreshToken = newRefreshToken,
-                ExpiresIn = DateTime.UtcNow.AddDays(30).ToString(),
+                ExpiresIn = DateTime.UtcNow.AddDays(RefreshTokenExpireDays).ToString(),
             });
             await _appDbContext.SaveChangesAsync();
 
