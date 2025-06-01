@@ -37,7 +37,7 @@ public class JwtHelper(IConfiguration config)
 
     public string GenerateRefreshToken()
     {
-        var randomNumber = new byte[32];
+        var randomNumber = new byte[100];
         using var rng = RandomNumberGenerator.Create();
         rng.GetBytes(randomNumber);
         return Convert.ToBase64String(randomNumber);

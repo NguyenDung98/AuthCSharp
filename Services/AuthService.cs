@@ -7,10 +7,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AuthC_.Services
 {
-    public class AuthService(UserContext userContext, TokenContext tokenContext, JwtHelper jwtHelper) : IAuthService
+    public class AuthService(AppDbContext appDbContext, JwtHelper jwtHelper) : IAuthService
     {
-        private readonly UserContext _userContext = userContext;
-        private readonly TokenContext _tokenContext = tokenContext;
+        private readonly AppDbContext _appDbContext = appDbContext;
         private readonly JwtHelper _jwtHelper = jwtHelper;
 
         // Implementation of the IAuthService methods would go here.
@@ -18,7 +17,7 @@ namespace AuthC_.Services
         {
             // Logic for signing up a user
             // Check if the email is available for signup
-            if (_userContext.Users.Any(u => u.Email == userSignupDTO.Email))
+            if (_appDbContext.Users.Any(u => u.Email == userSignupDTO.Email))
             {
                 throw new InvalidOperationException("Email is already in use.");
             }
@@ -33,8 +32,8 @@ namespace AuthC_.Services
                 LastName = userSignupDTO.LastName
             };
 
-            _userContext.Users.Add(user);
-            await _userContext.SaveChangesAsync();
+            _appDbContext.Users.Add(user);
+            await _appDbContext.SaveChangesAsync();
 
             return new UserSignupResDTO
             {
@@ -48,7 +47,7 @@ namespace AuthC_.Services
         public async Task<UserSigninResDTO> SignInUser(UserSigninDTO userSigninDTO)
         {
             // Find the user by email
-            var user = await _userContext.Users.FirstOrDefaultAsync(u => u.Email == userSigninDTO.Email)
+            var user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Email == userSigninDTO.Email)
                         ?? throw new InvalidOperationException("User not found.");
 
             // Verify the password using BCrypt
@@ -62,13 +61,13 @@ namespace AuthC_.Services
             string refreshToken = _jwtHelper.GenerateRefreshToken();
 
             // Save the refresh token in the database
-            _tokenContext.Tokens.Add(new Token
+            _appDbContext.Tokens.Add(new Token
             {
                 UserId = user.Id,
                 RefreshToken = refreshToken,
                 ExpiresIn = DateTime.UtcNow.AddDays(30).ToString() // Set expiration for 30 days
             });
-            await _tokenContext.SaveChangesAsync();
+            await _appDbContext.SaveChangesAsync();
 
             // Return the user details excluding the password hash
             return new UserSigninResDTO
@@ -87,25 +86,17 @@ namespace AuthC_.Services
 
         public async Task<bool> SignOut(int userId)
         {
-            // Find all tokens associated with the user
-            var tokens = await _tokenContext.Tokens.Where(t => t.UserId == userId).ToListAsync();
-            if (tokens.Count > 0)
-            {
-                Console.WriteLine($"Signing out user with ID: {userId}");
-                // Log the tokens being removed
-                tokens.ForEach(token => Console.WriteLine($"Removing token: {token.RefreshToken}, ExpiresIn: {token.ExpiresIn}"));
-
-                // Remove the token from the database
-                _tokenContext.Tokens.RemoveRange(tokens);
-                await _tokenContext.SaveChangesAsync();
-            }
+            // Delete all tokens for the user in a single database operation
+            await _appDbContext.Tokens
+                .Where(t => t.UserId == userId)
+                .ExecuteDeleteAsync();
             return true;
         }
 
         public async Task<RefreshTokenResDTO> RefreshToken(string refreshToken)
         {
             // Find the token in the database
-            var token = await _tokenContext.Tokens.FirstOrDefaultAsync(t => t.RefreshToken == refreshToken)
+            var token = await _appDbContext.Tokens.FirstOrDefaultAsync(t => t.RefreshToken == refreshToken)
                         ?? throw new InvalidDataException("Refresh token not found.");
 
             // Check if the token has expired
@@ -115,17 +106,21 @@ namespace AuthC_.Services
             }
 
             // Generate a new JWT and refresh token
-            var user = _userContext.Users.Find(token.UserId)
+            var user = _appDbContext.Users.Find(token.UserId)
                        ?? throw new InvalidOperationException("User not found.");
 
             string newJwt = _jwtHelper.GenerateJWT(user.Id.ToString(), user.Email);
             string newRefreshToken = _jwtHelper.GenerateRefreshToken();
 
-            // Create a new refresh token and update the existing token in the database
-            token.RefreshToken = newRefreshToken;
-            token.ExpiresIn = DateTime.UtcNow.AddDays(30).ToString();
-            _tokenContext.Tokens.Update(token);
-            await _tokenContext.SaveChangesAsync();
+            // Remove the old token & create a new refresh token
+            _appDbContext.Tokens.Remove(token);
+            _appDbContext.Tokens.Add(new Token 
+            {
+                UserId = token.UserId,
+                RefreshToken = newRefreshToken,
+                ExpiresIn = DateTime.UtcNow.AddDays(30).ToString(),
+            });
+            await _appDbContext.SaveChangesAsync();
 
             return new RefreshTokenResDTO
             {
