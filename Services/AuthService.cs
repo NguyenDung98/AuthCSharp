@@ -85,8 +85,20 @@ namespace AuthC_.Services
             };
         }
 
-        public async Task<bool> SignOut()
+        public async Task<bool> SignOut(int userId)
         {
+            // Find all tokens associated with the user
+            var tokens = await _tokenContext.Tokens.Where(t => t.UserId == userId).ToListAsync();
+            if (tokens.Count > 0)
+            {
+                Console.WriteLine($"Signing out user with ID: {userId}");
+                // Log the tokens being removed
+                tokens.ForEach(token => Console.WriteLine($"Removing token: {token.RefreshToken}, ExpiresIn: {token.ExpiresIn}"));
+
+                // Remove the token from the database
+                _tokenContext.Tokens.RemoveRange(tokens);
+                await _tokenContext.SaveChangesAsync();
+            }
             return true;
         }
 

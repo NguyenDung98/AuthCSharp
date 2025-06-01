@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using AuthC_.DTOs;
 using AuthC_.Services;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace AuthC_.Controllers
 {
@@ -64,12 +66,20 @@ namespace AuthC_.Controllers
         }
 
         // POST: api/signout
+        [Authorize]
         [HttpPost("signout")]
-        public async Task<ActionResult> SignOut() 
+        public async Task<ActionResult> SignOutUser() 
         {
             try
             {
-                await _authService.SignOut();
+                var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return BadRequest("User ID not found in the token.");
+                }
+                
+                await _authService.SignOut(int.Parse(userId));
                 return NoContent();
             }
             catch (Exception ex)
