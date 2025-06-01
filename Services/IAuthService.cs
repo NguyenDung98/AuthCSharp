@@ -8,6 +8,6 @@ namespace AuthC_.Services
         Task<UserSignupResDTO> SignUpUser(UserSignupDTO userDto);
         Task<UserSigninResDTO> SignInUser(UserSigninDTO userSigninDTO);
         Task<bool> SignOut(int userId);
-        Task<string> RefreshToken(string refreshToken);
+        Task<RefreshTokenResDTO> RefreshToken(string refreshToken);
     }
 }

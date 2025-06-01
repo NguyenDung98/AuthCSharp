@@ -68,7 +68,7 @@ namespace AuthC_.Controllers
         // POST: api/signout
         [Authorize]
         [HttpPost("signout")]
-        public async Task<ActionResult> SignOutUser() 
+        public async Task<ActionResult> SignOutUser()
         {
             try
             {
@@ -78,13 +78,45 @@ namespace AuthC_.Controllers
                 {
                     return BadRequest("User ID not found in the token.");
                 }
-                
+
                 await _authService.SignOut(int.Parse(userId));
                 return NoContent();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error during signout: {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request.");
+            }
+        }
+
+        // POST: api/refresh-token
+        [HttpPost("refresh-token")]
+        public async Task<ActionResult<RefreshTokenResDTO>> RefreshToken([FromBody] string refreshToken)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(refreshToken))
+                {
+                    return BadRequest("Refresh token is required.");
+                }
+
+                RefreshTokenResDTO refreshTokenRes = await _authService.RefreshToken(refreshToken);
+                return Ok(refreshTokenRes);
+            }
+            catch (InvalidDataException ex)
+            {
+                Console.WriteLine($"Error during refresh token: {ex.Message}");
+                return NotFound(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine($"Error during refresh token: {ex.Message}");
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error during refresh token: {ex.Message}");
                 Console.WriteLine(ex.StackTrace);
                 return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request.");
             }

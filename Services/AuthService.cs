@@ -102,10 +102,36 @@ namespace AuthC_.Services
             return true;
         }
 
-        public Task<string> RefreshToken(string refreshToken)
+        public async Task<RefreshTokenResDTO> RefreshToken(string refreshToken)
         {
-            // Logic for refreshing a token
-            throw new NotImplementedException();
+            // Find the token in the database
+            var token = await _tokenContext.Tokens.FirstOrDefaultAsync(t => t.RefreshToken == refreshToken)
+                        ?? throw new InvalidDataException("Refresh token not found.");
+
+            // Check if the token has expired
+            if (DateTime.UtcNow > DateTime.Parse(token.ExpiresIn))
+            {
+                throw new InvalidOperationException("Refresh token has expired.");
+            }
+
+            // Generate a new JWT and refresh token
+            var user = _userContext.Users.Find(token.UserId)
+                       ?? throw new InvalidOperationException("User not found.");
+
+            string newJwt = _jwtHelper.GenerateJWT(user.Id.ToString(), user.Email);
+            string newRefreshToken = _jwtHelper.GenerateRefreshToken();
+
+            // Create a new refresh token and update the existing token in the database
+            token.RefreshToken = newRefreshToken;
+            token.ExpiresIn = DateTime.UtcNow.AddDays(30).ToString();
+            _tokenContext.Tokens.Update(token);
+            await _tokenContext.SaveChangesAsync();
+
+            return new RefreshTokenResDTO
+            {
+                Token = newJwt,
+                RefreshToken = newRefreshToken
+            };
         }
     }
 }
